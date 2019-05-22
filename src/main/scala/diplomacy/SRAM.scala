@@ -8,7 +8,7 @@ import freechips.rocketchip.diplomaticobjectmodel.DiplomaticObjectModelAddressin
 import freechips.rocketchip.diplomaticobjectmodel.logicaltree.{BusMemoryLogicalTreeNode, LogicalModuleTree, LogicalTreeNode}
 import freechips.rocketchip.diplomaticobjectmodel.logicaltree.LogicalModuleTree.cache
 import freechips.rocketchip.diplomaticobjectmodel.model._
-import freechips.rocketchip.util.DescribedSRAM
+import freechips.rocketchip.util.{DescribedSRAM, DescribedSRAMIdAssigner}
 
 abstract class DiplomaticSRAM(
     address: AddressSet,
@@ -44,14 +44,16 @@ abstract class DiplomaticSRAM(
       name = devName.getOrElse("mem"),
       desc = devName.getOrElse("mem"),
       size = size,
-      data = Vec(lanes, UInt(width = bits))
+      data = Vec(lanes, UInt(width = bits)),
+      id = DescribedSRAMIdAssigner.genId()
     )
     devName.foreach(n => mem.suggestName(n.split("-").last))
 
     val omSRAM: OMSRAM = DiplomaticObjectModelAddressing.makeOMSRAM(
       desc = "mem", //lim._2.name.map(n => n).getOrElse(lim._1.name),
       depth = size,
-      data = Vec(lanes, UInt(width = bits))
+      data = Vec(lanes, UInt(width = bits)),
+      id = DescribedSRAMIdAssigner.genId()
     )
 
     parentLogicalTreeNode.map {

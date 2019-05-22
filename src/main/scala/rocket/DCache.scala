@@ -55,7 +55,8 @@ class DCacheDataArray(implicit p: Parameters) extends L1HellaCacheModule()(p) {
         name = s"data_arrays_${i}",
         desc = "DCache Data Array",
         size = nSets * cacheBlockBytes / rowBytes,
-        data = Vec(nWays * (wordBits / eccBits), UInt(width = encBits))
+        data = Vec(nWays * (wordBits / eccBits), UInt(width = encBits)),
+        id = DescribedSRAMIdAssigner.genId()
       )
   }
 
@@ -108,7 +109,8 @@ class DCacheModule(outer: DCache) extends HellaCacheModule(outer) {
     name = "tag_array",
     desc = "DCache Tag Array",
     size = nSets,
-    data = Vec(nWays, metaArb.io.out.bits.data)
+    data = Vec(nWays, metaArb.io.out.bits.data),
+    id = DescribedSRAMIdAssigner.genId()
   )
 
   // data

@@ -26,7 +26,8 @@ object DescribedSRAM {
     name: String,
     desc: String,
     size: BigInt, // depth
-    data: T
+    data: T,
+    id: Int
   ): SyncReadMem[T] = {
 
     val mem = SeqMem(size, data)
@@ -46,7 +47,7 @@ object DescribedSRAM {
       depth = size,
       description = desc,
       write_mask_granularity = granWidth,
-      uid = DescribedSRAMIdAssigner.genId())
+      uid = id)
 
     mem
   }

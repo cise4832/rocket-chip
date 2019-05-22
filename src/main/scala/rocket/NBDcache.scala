@@ -632,7 +632,8 @@ class DataArray(implicit p: Parameters) extends L1HellaCacheModule()(p) {
           name = s"array_${w}_${i}",
           desc = "Non-blocking DCache Data Array",
           size = nSets * refillCycles,
-          data = Vec(rowWords, Bits(width=encDataBits))
+          data = Vec(rowWords, Bits(width=encDataBits)),
+          id = DescribedSRAMIdAssigner.genId()
         )
         when (wway_en.orR && io.write.valid && io.write.bits.wmask(i)) {
           val data = Vec.fill(rowWords)(io.write.bits.data(encDataBits*(i+1)-1,encDataBits*i))
@@ -654,7 +655,8 @@ class DataArray(implicit p: Parameters) extends L1HellaCacheModule()(p) {
         name = s"array_${w}",
         desc = "Non-blocking DCache Data Array",
         size = nSets * refillCycles,
-        data = Vec(rowWords, Bits(width=encDataBits))
+        data = Vec(rowWords, Bits(width=encDataBits)),
+        id = DescribedSRAMIdAssigner.genId()
       )
       when (io.write.bits.way_en(w) && io.write.valid) {
         val data = Vec.tabulate(rowWords)(i => io.write.bits.data(encDataBits*(i+1)-1,encDataBits*i))

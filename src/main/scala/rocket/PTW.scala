@@ -194,7 +194,8 @@ class PTW(n: Int)(implicit edge: TLEdgeOut, p: Parameters) extends CoreModule()(
       name = "l2_tlb_ram",
       desc = "L2 TLB",
       size = coreParams.nL2TLBEntries,
-      data = UInt(width = code.width(new Entry().getWidth))
+      data = UInt(width = code.width(new Entry().getWidth)),
+      id = DescribedSRAMIdAssigner.genId()
     )
 
     val g = Reg(UInt(width = coreParams.nL2TLBEntries))

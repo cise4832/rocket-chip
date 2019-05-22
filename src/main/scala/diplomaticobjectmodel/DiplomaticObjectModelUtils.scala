@@ -174,7 +174,8 @@ object DiplomaticObjectModelAddressing {
   def makeOMSRAM[T <: Data](
     desc: String,
     depth: BigInt,
-    data: T
+    data: T,
+    id: Int
   ): OMSRAM = {
 
     val granWidth = data match {
@@ -187,7 +188,8 @@ object DiplomaticObjectModelAddressing {
       addressWidth = log2Ceil(depth),
       dataWidth = data.getWidth,
       depth = depth,
-      writeMaskGranularity = granWidth
+      writeMaskGranularity = granWidth,
+      id = id
     )
   }
 

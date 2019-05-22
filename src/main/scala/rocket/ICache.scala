@@ -182,7 +182,8 @@ class ICacheModule(outer: ICache) extends LazyModuleImp(outer)
     name = "tag_array",
     desc = "ICache Tag Array",
     size = nSets,
-    data = Vec(nWays, UInt(width = tECC.width(1 + tagBits)))
+    data = Vec(nWays, UInt(width = tECC.width(1 + tagBits))),
+    id = DescribedSRAMIdAssigner.genId()
   )
 
   val tag_rdata = tag_array.read(s0_vaddr(untagBits-1,blockOffBits), !refill_done && s0_valid)
@@ -240,7 +241,8 @@ class ICacheModule(outer: ICache) extends LazyModuleImp(outer)
         name = s"data_arrays_${i}",
         desc = "ICache Data Array",
         size = nSets * refillCycles,
-        data = Vec(nWays, UInt(width = dECC.width(wordBits)))
+        data = Vec(nWays, UInt(width = dECC.width(wordBits))),
+        id = DescribedSRAMIdAssigner.genId()
       )
   }
 
