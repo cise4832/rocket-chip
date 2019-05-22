@@ -3,26 +3,29 @@
 package freechips.rocketchip.util
 
 import Chisel._
+import chisel3.experimental._
 import chisel3.util.HasBlackBoxResource
 
 case class PlusArgInfo(default: Int, docstring: String)
 
-class plusarg_reader(val format: String, val default: Int, val docstring: String) extends BlackBox(Map(
-    "FORMAT"  -> chisel3.core.StringParam(format),
-    "DEFAULT" -> chisel3.core.IntParam(default))) with HasBlackBoxResource {
+class plusarg_reader(val format: String, val default: BigInt, val docstring: String, val width: Int) extends BlackBox(Map(
+    "FORMAT"  -> StringParam(format),
+    "DEFAULT" -> IntParam(default),
+    "WIDTH" -> IntParam(width)
+  )) with HasBlackBoxResource {
   val io = new Bundle {
-    val out = UInt(OUTPUT, width = 32)
+    val out = Output(UInt(width.W))
   }
 
   setResource("/vsrc/plusarg_reader.v")
 }
 
 /* This wrapper class has no outputs, making it clear it is a simulation-only construct */
-class PlusArgTimeout(val format: String, val default: Int, val docstring: String) extends Module {
+class PlusArgTimeout(val format: String, val default: Int, val docstring: String, val width: Int) extends Module {
   val io = new Bundle {
-    val count = UInt(INPUT, width = 32)
+    val count = Input(UInt(width.W))
   }
-  val max = Module(new plusarg_reader(format, default, docstring)).io.out
+  val max = Module(new plusarg_reader(format, default, docstring, width)).io.out
 
   when (max > UInt(0)) {
     assert (io.count < max, s"Timeout exceeded: $docstring")
@@ -37,18 +40,18 @@ object PlusArg
     * Add a docstring to document the arg, which can be dumped in an elaboration
     * pass.
     */
-  def apply(name: String, default: Int = 0, docstring: String = ""): UInt = {
+  def apply(name: String, default: BigInt = 0, docstring: String = "", width: Int = 32): UInt = {
     PlusArgArtefacts.append(name, default, docstring)
-    Module(new plusarg_reader(name + "=%d", default, docstring)).io.out
+    Module(new plusarg_reader(name + "=%d", default, docstring, width)).io.out
   }
 
   /** PlusArg.timeout(name, default, docstring)(count) will use chisel.assert
     * to kill the simulation when count exceeds the specified integer argument.
     * Default 0 will never assert.
     */
-  def timeout(name: String, default: Int = 0, docstring: String = "")(count: UInt) {
+  def timeout(name: String, default: Int = 0, docstring: String = "", width: Int = 32)(count: UInt) {
     PlusArgArtefacts.append(name, default, docstring)
-    Module(new PlusArgTimeout(name + "=%d", default, docstring)).io.count := count
+    Module(new PlusArgTimeout(name + "=%d", default, docstring, width)).io.count := count
   }
 }
 
