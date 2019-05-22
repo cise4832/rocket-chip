@@ -5,14 +5,15 @@ package freechips.rocketchip.diplomacy
 import Chisel._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomaticobjectmodel.DiplomaticObjectModelAddressing
-import freechips.rocketchip.diplomaticobjectmodel.logicaltree.LogicalModuleTree
+import freechips.rocketchip.diplomaticobjectmodel.logicaltree.{BusMemoryLogicalTreeNode, LogicalModuleTree, LogicalTreeNode}
 import freechips.rocketchip.diplomaticobjectmodel.logicaltree.LogicalModuleTree.cache
-import freechips.rocketchip.diplomaticobjectmodel.model.{OMMemory, OMMemoryRegion, OMRTLInterface, OMRTLModule}
+import freechips.rocketchip.diplomaticobjectmodel.model._
 import freechips.rocketchip.util.DescribedSRAM
 
 abstract class DiplomaticSRAM(
     address: AddressSet,
     beatBytes: Int,
+    parentLogicalTreeNode: Option[LogicalTreeNode],
     devName: Option[String])(implicit p: Parameters) extends LazyModule
 {
   val device = devName
@@ -20,10 +21,7 @@ abstract class DiplomaticSRAM(
     .getOrElse(new MemoryDevice())
 
   def getOMMemRegions(resourceBindings: ResourceBindings): Seq[OMMemoryRegion] = {
-    val resourceBindingsMaps = cache()
-
-    val rb = LogicalModuleTree.getResourceBindings(device, resourceBindingsMaps)
-    DiplomaticObjectModelAddressing.getOMMemoryRegions(devName.getOrElse(""), rb) // TODO name source???
+    DiplomaticObjectModelAddressing.getOMMemoryRegions(devName.getOrElse(""), resourceBindings) // TODO name source???
   }
 
   val resources = device.reg("mem")
@@ -34,7 +32,13 @@ abstract class DiplomaticSRAM(
   def mask: List[Boolean] = bigBits(address.mask >> log2Ceil(beatBytes))
 
   // Use single-ported memory with byte-write enable
-  def makeSinglePortedByteWriteSeqMem(size: BigInt, lanes: Int = beatBytes, bits: Int = 8) = {
+  def makeSinglePortedByteWriteSeqMem(
+    size: BigInt,
+    lanes: Int = beatBytes,
+    bits: Int = 8,
+    busProtocol: Option[OMProtocol],
+    dataECC: Option[OMECC] = None,
+    hasAtomics: Option[Boolean] = None) = {
     // We require the address range to include an entire beat (for the write mask)
     val mem =  DescribedSRAM(
       name = devName.getOrElse("mem"),
@@ -43,6 +47,25 @@ abstract class DiplomaticSRAM(
       data = Vec(lanes, UInt(width = bits))
     )
     devName.foreach(n => mem.suggestName(n.split("-").last))
+
+    val omSRAM: OMSRAM = DiplomaticObjectModelAddressing.makeOMSRAM(
+      desc = "mem", //lim._2.name.map(n => n).getOrElse(lim._1.name),
+      depth = size,
+      data = Vec(lanes, UInt(width = bits))
+    )
+
+    parentLogicalTreeNode.map {
+      case parentLTN =>
+        def sramLogicalTreeNode = new BusMemoryLogicalTreeNode(
+          device = device,
+          omSRAMs = Seq(omSRAM),
+          busProtocol = busProtocol.getOrElse(throw new IllegalArgumentException("Protocol not specified")),
+          dataECC = dataECC,
+          hasAtomics = hasAtomics,
+          busProtocolSpecification = None)
+        LogicalModuleTree.add(parentLTN, sramLogicalTreeNode)
+    }
+
 
     val omMem: OMMemory = DiplomaticObjectModelAddressing.makeOMMemory(
       desc = "mem", //lim._2.name.map(n => n).getOrElse(lim._1.name),
